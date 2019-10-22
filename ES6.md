@@ -245,7 +245,8 @@ let {a,b,c}={12,5,8};（忽略了右边是个四不像）
 
 ### 函数
 
-1.箭头函数
+#### 箭头函数
+
 function (参数){
 
 }
@@ -279,9 +280,261 @@ let sum=(a,b)=>a+b;
 
 
 
-
-2.参数展开
+#### 参数展开
 
 剩余参数——必须是最后一个
 展开数组——就跟把数组的东西写在那儿一样
+
+eg：
+
+```javascript
+	let arr=[12,5,8,99,27];
+    //...arr
+    //12,5,8,99,27
+
+    function sum(a,b,c,d,e){
+      return a+b+c+d+e;
+    }
+
+    //alert(sum(arr[0], arr[1], ...))
+    //alert(sum(...arr));
+    //alert(sum(12,5,8,99,27));
+```
+
+eg:
+
+```javascript
+	let arr1=[1,2,3];
+    let arr2=[4,5,6];
+
+    let arr=[...arr1, ...arr2];
+    //let arr=[1,2,3, 4,5,6];
+```
+
+### 系统对象
+
+#### Array
+
++ map      映射   1对1
++ forEach 遍历   循环一遍
++  filter      过滤
++ reduce   减少  多对1
+
+eg：
+
+```javascript
+//1.map
+let arr=[100, 98, 37, 28, 19, 96, 56, 67];
+    /*let res=arr.map(function (item){
+      if(item>=60){
+        return true;
+      }else{
+        return false;
+      }
+    });*/
+    let res=arr.map(item=>item>=60);
+//此时能return本省为true
+    console.log(arr, res);
+
+//2.forEach
+	let arr=[12, 5, 8, 99];
+    arr.forEach((item, index)=>{
+      //alert('第'+index+'个：'+item);
+      alert(`第${index}个：${item}`);
+        //字符串模板--反单引号
+    });
+
+//3.filter
+	let arr=[12, 88, 19, 27, 82, 81, 100, 107];
+    let arr2=arr.filter(item=>item%2==0);
+    console.log(arr);
+    console.log(arr2);
+	//.filter(item=>item.loc==cur.loc&&item.price>60)
+
+//4.reduce（求和，求平均数）
+ 	let arr=[12, 66, 81, 92];
+    let res=arr.reduce(function (tmp, item, index){
+      alert(`第${index}次，${tmp}+${item}`);
+      return tmp+item;
+    });	
+ 	let revg=arr.reduce((tmp, item, index)=>{
+      if(index<arr.length-1){
+        return tmp+item;
+      }else{
+        return (tmp+item)/arr.length;
+      }
+    });
+
+```
+
+#### String
+
++ 字符串模板
+
++ startsWith   endsWith
+
+eg:
+
+```javascript
+	let url='http://www.bing.com/a';
+    if(url.startsWith('http://') || url.startsWith('https://')){
+      alert('是网址');
+    }else{
+      alert('不是');
+    }
+```
+
+#### JSON
+
++ 标准写法`{"key":"value","zoe":121}`
++ JSON对象
+  + JSON.stringify(json)  JSON--->字符串
+  + JSON.parse(str)         字符串--->JSON
+
+eg：
+
+```javascript
+//	JSON.stringify(json)
+	let json={a: 12, b: 5, c: 'blue'};
+    //不传输不加引号直接在js里面可以使用；传输的时候直接转成JSON的字符串
+    let str=JSON.stringify(json);
+    console.log(str);
+//JSON.parse(str)
+	let str='{"a":12,"b":5,"c":"blue"}';
+    let json=JSON.parse(str);
+	//解析字符串为JSON
+    console.log(json);
+```
+
+### 异步处理（重要）
+
+#### 异步操作
+
+异步——多个操作可以一起进行，互不干扰
+同步——操作一个个进行
+
+eg:
+
+```javascript
+//ajax异步操作（注意使用的jQuery）
+$.ajax({
+  url: 'data/1.json',
+  dataType: 'json',
+  success(data1){
+    $.ajax({
+      url: 'data/2.json',
+      dataType: 'json',
+      success(data2){
+        $.ajax({
+          url: 'data/3.json',
+          dataType: 'json',
+          success(data3){
+            console.log(data1, data2, data3);
+          }
+        });
+      }
+    });
+  }
+});
+let data1=$.ajax('data/1.json');
+let data2=$.ajax('data/2.json');
+let data3=$.ajax('data/3.json');
+
+//同步操作一条一条执行
+```
+
+#### Promise
+
+Promise本质上是一个 对象,对异步函数的一个封装
+
+```javascript
+//1.普通的Promise
+let p=new Promise(function(resolve,reject)){
+    $.ajax({
+        url:'data/1.json',
+        dataType:'json',
+        success(data){
+		    resolve(data);
+		},
+        error(res){
+            resolve(res)
+        }
+    })
+})
+p.then(function(data){
+    alert('yes')
+    console.log(data)
+};
+      function(res){
+    alert('no')
+    console.log(res)
+})
+
+//2.jQuery中封装了Promise异步函数-直接写
+	let res=$.ajax({
+        url:'data/1.json',
+        dataType:'json',
+        success(data){
+            resolve(data)
+        },
+        error(res){
+            reject(res)
+        } 
+    })
+    console.log(res)
+```
+
+#### Promise.all
+
+```javascript
+Promise.all([
+      $.ajax({url: 'data/1.json', dataType: 'json'}),
+      $.ajax({url: 'data/2.json', dataType: 'json'}),
+      $.ajax({url: 'data/3.json', dataType: 'json'}),
+    ]).then((arr)=>{
+      let [data1, data2, data3]=arr;
+      console.log(data1, data2, data3);
+    //then(([data1, data2, data3])=>{
+    //console.log(data1, data2, data3);
+    //}
+    }, (res)=>{
+      alert('错了');
+    });
+
+```
+
+#### async/await
+
+同步书写异步，本质是语法糖
+
+```javascript
+async function show(){
+      let data1=await $.ajax({url: 'data/1.json', dataType: 'json'});
+      let data2=await $.ajax({url: 'data/2.json', dataType: 'json'});
+      let data3=await $.ajax({url: 'data/3.json', dataType: 'json'});
+      console.log(data1, data2, data3);
+    }
+    show();
+
+ async function show(){
+      let data1=await $.ajax({url: 'data/1.json', dataType: 'json'});
+      if(data1.a<10){
+        let data2=await $.ajax({url: 'data/2.json', dataType: 'json'});
+        alert('a');
+      }else{
+        let data3=await $.ajax({url: 'data/3.json', dataType: 'json'});
+        alert('b');
+      }
+    }
+
+    show();
+```
+
+
+
+
+
+
+
+
 
