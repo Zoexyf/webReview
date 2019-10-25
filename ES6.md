@@ -530,6 +530,45 @@ async function show(){
     show();
 ```
 
+### babel 
+
+解决Es6兼容性
+
+使用babel:
+
+1.在线，会给浏览器的执行造成负担
+
+ type=“text/babel”
+
+2.编译
+
+官网链接  : babeljs.io
+
+安装node.js
+
+npm  i @babel/core @babel/cli @babel/preset-env
+
+添加脚本
+
+添加  ***.babelrc***文件 —声明 preset
+
+### ES系列
+
++ ES6(ECMA 2015)
+
++ ES7(ECMA 2016)
+    **
+    Array.includes()
+
++ ES8(ECMA 2017)
+    await/async
+
++ ES9(ECMA 2018)
+    rest/spread
+    异步迭代
+    Promise.finally()
+    正则
+
 
 
 
