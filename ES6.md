@@ -1,5 +1,3 @@
--------
-
 ## ES6
 
 ECMAScript
