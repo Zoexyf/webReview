@@ -207,7 +207,7 @@ server.listen(8080)
 
 浏览器与服务器的交互规则
 
-1. 发展历史：
+1. #####发展历史：
 
 HTTP1.0  RFC-1945;规定通信规则
 
@@ -217,13 +217,13 @@ HTTPS     RFC-2818: 安全协议 非对称加密与对称加密结合
 
 HTTP2.0 RFC-7450: 加密 、头部压缩、 服务器推送、 管线操作 、多路复用
 
-2. HTTP报文结构：
+2. #####HTTP报文结构：
 
    header报文头:信息	 <=32K 
 
    body报文体:数据  	<=2G
 
-3. 状态码
+3. #####状态码
 
    1xx 信息
 
@@ -235,11 +235,380 @@ HTTP2.0 RFC-7450: 加密 、头部压缩、 服务器推送、 管线操作 、�
 
    5xx 服务器错误
 
-4. 请求方式
+4. #####请求方式get与post
 
    | GET  | 获取     | 数据放在URL里面传输 ，header里 | 容量小<32K |
    | ---- | -------- | ------------------------------ | ---------- |
    | POST | 发送数据 | 数据放在body里，也可放在URL里  | 容量大     |
 
-接收浏览器的GET数据
+GET数据一般一次性会传输；POST数据不行，因为体积过大，需要分几次传输，切成段的大小由具体环境决定
+
+POST数据是异步的
+
+接收浏览器的GET数据；
+
+```javascript
+const http=require('http')
+const querystring=require('querystring')
+//用来切割传参的&与=；直接引入模块就行
+
+let server=http.creatServer(function(req,res){
+    let [url,query]=req.url.split('?');
+    //表单所提交的内容会传到URL里面，所以只需要解析URL内容
+    let get=querystring.parse(query)
+    //将字符串转化为需要的格式JSON格式，get就得到了表单提交的信息；
+    
+})
+server.listen(8080)
+
+//2.使用URL直接处理数据
+const http=require('http')
+const url=require('url')
+
+let server=http.creatServer(function(req,res){
+    let result=url.parse(req.url,true)
+    //得到URL解析后的一串数据；加true会解析得到需要的JSON数据,即连query也进行了切割
+    let {pathname,query}=url.parse(req.url,true)
+})
+
+
+```
+
+表单数据GET
+
+```html
+<form action="http://localhost:8080/aaa" method="get">
+      用户：<input type="text" name="username" /><br>
+      密码：<input type="password" name="password" /><br>
+      <input type="submit" value="提交" />
+</form>
+```
+
+接收浏览器的POST数据
+
+```javascript
+const http=require('http')
+const url=require('url')
+
+let server=http.creatServer(function(req,res){
+    let arr=[]
+    req.on('data'，buffer=>{
+           arr.push(buffer)
+           })
+    //类似前台的事件;data 表示有数据过来，发生的次数取决于对方的数据到底有多大，data给的buffer参数，
+	//需要对buffer这种二进制的文件进行拼接；准备一个数组，每当有数据来的时候，将数据存储起来
+	//等到end的时候将存的一组的buffer对象通过自身属性concat进行连接
+    
+    req.on('end',()=>{
+        let buffer=Buffer.concat(arr)
+        console.log(buffer.toString())
+    })
+})
+server.listen(8080)
+
+//当文件仅为字符串时候（无图片音频等转格式有影响的数据时）
+// 引入模块 let querystring=require('querystring')
+// 在end事件中添加 let post=querystring.parse(buffer.toString())
+
+```
+
+
+
+总结：
+
+接收浏览器的GET数据：
+
++ url模块
+  + url.parse(req.url,true)=>{ pathname,query}
++ GET=>"/aaa/b?xx=xx&xxx=xxx"
+
+接收浏览器的POST数据
+
++ body内；分几次传输
+
+  ```javascript
+  req.on('data',buffer=>{
+  arr.push(buffer)
+  })
+  
+  req.on('end',()=>{
+  buffer=Buffer.concat(arr)
+  })
+  ```
+
++ POST=> "xx=xxx&xxx=xx"
++ querystring.parse('xx')
+
+get post 服务器整合
+
+```javascript
+const http=require('http')
+const url=require('url')
+const querystring=require('querystring')
+const fs=require('fs')
+let path='', get={}, post={};
+
+let server=http.creatServer((req,res)=>{
+    if(req.method=='GET'){
+        let {pathname,query}=url.parse(req.url,true)
+         path=pathname
+         get=query
+         complete();
+    }else if(req.method=='POST'){
+        path=req.url;
+        let arr=[]
+        req.on('data',buffer=>{
+            arr.push(buffer)
+        })
+        req.on('end',()=>{
+            let buffer=Buffer.concat(arr)
+            post=querystring.parse(buffer.toString())
+        })
+         complete();
+        
+    }
+    function complete(){
+    console.log(path, get, post);
+  }
+}).listen(8080)
+```
+
+eg：登录注册接口
+
+```javascript
+const http=require('http')
+const url=require('url')
+const querystring=require('querystring')
+const fs=require('fs')
+let path='', get={}, post={};
+let users={}
+
+let server=http.creatServer((req,res)=>{
+    if(req.method=='GET'){
+        let {pathname,query}=url.parse(req.url,true)
+         path=pathname
+         get=query
+         complete();
+    }else if(req.method=='POST'){
+        path=req.url;
+        let arr=[]
+        req.on('data',buffer=>{
+            arr.push(buffer)
+        })
+        req.on('end',()=>{
+            let buffer=Buffer.concat(arr)
+            post=querystring.parse(buffer.toString())
+        })
+         complete();
+        
+    }
+    function complete(){
+        //注册
+    if(path=='/reg'){
+        let {username,password}=get;
+        
+        if(users[username]){
+            res.write(JSON.stringfy({error:1,msg:'此用户已存在'}))
+            res.end()
+        }else{
+            users[username]=password
+            
+            res.write(JSON.stringfy({error:0,msg:''}))
+            res.end();
+            
+        }
+        //登录
+    }else if(path=='/login'){
+        let {username,password}=get;
+        if(!users[username]){
+            res.wirte(JSON.stringfy({error:1,msg:'找不到此用户'}))
+            res.end()
+        }else{
+            if(users[username]!=password){
+                res.write(JSON.stringfy({error:1,msg:'用户密码错误'}))
+                res.end()
+            }else{
+                res.write(JSON.stringfy({error:0,msg:'登录成功'}))
+            }
+        }
+    }else{
+        fs.readFile(`www${path}`,(err,buffer)=>{
+            if(err){
+                res.writeHeader(404)
+                res.write('Not Found');
+      		    res.end();
+            }else{
+                res.write(buffer)
+                res.end()
+            }
+        })
+    }  
+  }
+}).listen(8080)
+```
+
+注册接口
+
+/reg?username=xxx&password=xxx
+
+=>{error:1,msg:'why'}
+
+登录接口
+
+/login?username=xxx&password=xxx
+
+=>{error:1}
+
+eg：实际操作一个注册登录界面
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>登录注册页面</title>
+</head>
+<script src='jquery.js' charset="utf-8"></script>
+<script>
+    $(function(){
+        $('#btn1').click(()=>{
+            $.ajax({
+                url:'/reg',
+                data:{
+                    username:$('#user').val(),
+                    password:$('#password').val()
+                },
+                dataType:'json',
+            }).then(json=>{
+                if(json.error){
+                    alert(json.msg)
+                }else{
+                    alert("注册成功")
+                }
+            },err=>{
+                alert("注册失败")
+            }
+            )
+        })
+
+        $('#btn2').click(()=>{
+            $.ajax({
+                url:'login',
+                data:{
+                    username:$('#user').val(),
+                    password:$('#password').val()
+                },
+                dataType:'json'
+            }).then(()=>{
+                if(json.error){
+                    alert(json.mag)
+
+                }else{
+                    alert("登录成功")
+                }
+            },
+            err=>{
+                alert("登录失败")
+            })
+        })
+
+    })
+</script>
+<style>
+    input{
+        height: 30px;
+        margin:5px;
+    }
+
+</style>
+<body>
+    用户：<input type="text" id="user" /><br>
+    密码：<input type="text" id="password" /><br>
+    <input type="button" value="注册" id="btn1">
+    <input type="button" value="登录" id="btn2">
+</body>
+</html>
+```
+
+node运行上面的server代码
+
+服务器：请求文件——结果 ； 请求接口——操作
+
+完整服务器：1.处理文件2.处理接口3.存储数据
+
+
+
+### node模块系统
+
+模块  ： 系统模块 + 第三方模块
+
+eg： CMD   AMD   ESM等 
+
+Node.js的模块系统
+1.定义模块
+
++  module    批量导出
++   exports   一个一个导出
++   require 
+  +   如果带有路径——去路径下面找
+  +   如果没有：
+        node_modules文件夹
+        系统node_modules
+
+eg：mod.js ——将它放置在node_modules文件夹中
+
+```javascript
+exports.a=12; //单个可导出，即对外暴露
+exports.b=5;
+
+//批量对外暴露
+module.exports={
+  a: 12, b: 5
+};
+
+//封装成函数对外暴露
+module.exports=function (){
+  console.log('aaa');
+};
+
+//封装成类对外暴露
+module.exports=class {
+  constructor(name){
+    this.name=name;
+  }
+
+  show(){
+    console.log(this.name);
+  }
+};
+
+//因为没有对外暴露，所以对外为undifined
+let c=33;
+
+```
+
+1.js
+
+```javascript
+//引入
+/*const mod1=require('mod1');
+
+console.log(mod1.a);
+console.log(mod1.b);
+console.log(mod1.c);*/
+
+
+const mod1=require('mod1');
+
+//函数直接使用
+//mod1();
+
+//类的使用
+let p=new mod1(99);
+
+p.show();
+
+```
 
