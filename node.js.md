@@ -201,13 +201,9 @@ server.listen(8080)
 
 
 
-### 数据交互
-
-#### HTTP协议
+### 数据交互—HTTP协议
 
 浏览器与服务器的交互规则
-
-1. #####发展历史：
 
 HTTP1.0  RFC-1945;规定通信规则
 
@@ -217,29 +213,31 @@ HTTPS     RFC-2818: 安全协议 非对称加密与对称加密结合
 
 HTTP2.0 RFC-7450: 加密 、头部压缩、 服务器推送、 管线操作 、多路复用
 
-2. #####HTTP报文结构：
+#### Http报文结构与状态码
 
-   header报文头:信息	 <=32K 
+#####	HTTP报文结构：
 
-   body报文体:数据  	<=2G
+​		header报文头:信息	 <=32K 
 
-3. #####状态码
+​		body报文体:数据  	<=2G
 
-   1xx 信息
+#####	状态码
 
-   2xx 成功
+​		1xx 信息
 
-   3xx 重定向
+​		2xx 成功
 
-   4xx 请求错误
+​		3xx 重定向
 
-   5xx 服务器错误
+​		4xx 请求错误
 
-4. #####请求方式get与post
+​		5xx 服务器错误
 
-   | GET  | 获取     | 数据放在URL里面传输 ，header里 | 容量小<32K |
-   | ---- | -------- | ------------------------------ | ---------- |
-   | POST | 发送数据 | 数据放在body里，也可放在URL里  | 容量大     |
+#### 请求方式get与post
+
+| GET  | 获取     | 数据放在URL里面传输 ，header里 | 容量小<32K |
+| ---- | -------- | ------------------------------ | ---------- |
+| POST | 发送数据 | 数据放在body里，也可放在URL里  | 容量大     |
 
 GET数据一般一次性会传输；POST数据不行，因为体积过大，需要分几次传输，切成段的大小由具体环境决定
 
@@ -311,8 +309,6 @@ server.listen(8080)
 // 在end事件中添加 let post=querystring.parse(buffer.toString())
 
 ```
-
-
 
 总结：
 
@@ -540,7 +536,7 @@ node运行上面的server代码
 
 
 
-### node模块系统
+### node模块系统module exports require
 
 模块  ： 系统模块 + 第三方模块
 
@@ -612,3 +608,430 @@ p.show();
 
 ```
 
+### package.json
+
+package-lock.json，安装出错的时候出现的文件，展示出错的信息
+
+install --save -dev 与--save差别
+
+#####后端包管理器
+
++ npm/cnpm
+
++ yarn facebook出的一款包管理工具
+
+​		npm i yarn -g
+
+​		yarn add xxx
+
+#####前端包管理器 
+
++ bower
+  + npm i bower -g
+  + bower i xxx
+
+#####系统包
+
++ assert——断言
+  + 符合要求会通过，不符合要求会进行报错；用来测试
++ path ——路径
+  + 拼装路径，解析路径
++ URL——网址
++ querystring——请求数据
++ net（重要）——网络通信
+  + 在不使用http协议的时候使用，位于七层模型中的传输层
+
+eg：
+
+```javascript
+//1.assert
+	const assert=require('assert');
+	//assert(条件，消息)
+	//assert(5<3, 'aaa');
+
+	//assert.deepEqual(变量, 预期值, msg);
+	//assert.deepStrictEqual(变量, 预期值, msg);
+
+//2.path
+	const path=require('path');
+	let str='/root/a/b/1.txt';
+
+	//console.log(path.dirname(str));	// // /root/a/b
+	//console.log(path.extname(str));	// //	.txt
+	//console.log(path.basename(str));	// //	1.txt
+
+	//console.log(path.resolve('/root/a/b', '../c', 'build', '..', 'strict'));
+	//将地址参数合并，包括他的中间的操作
+
+	//console.log(path.resolve(__dirname, 'build'));
+	//绝对路径：包所在的地址与程序所在的位置不同，使用绝对路径
+	// __dirname:魔术变量，系统自带，指的是当前目录（双下划线）
+
+//3.url	
+	const url=require('url');
+
+	let str='http://www.bing.com:8080/a/b/1.html?a=1&a=2&a=3';
+
+	console.log(url.parse(str, true));
+	//query值相同会自动拼接成数组
+
+//4.querystring
+	const querystring=require('querystring');
+
+	//console.log(querystring.parse("a=12&b=5&c=99"));
+	console.log(querystring.stringify({a: 12, b: 99, c: 'blue'}));
+	//parse将字符串数据转成要的数据（一般为json）
+	//stringify将数据转为字符串，两者相反
+
+```
+
+URL通过parse解析后的图片
+
+![](D:\weblearning\mycode\mobileWebCode\webReview-zoe\picture\parse.PNG)
+
+小问题：[object] [object]产生出来的原因?
+
+```javascript
+
+let json={a: 12, b: 5};
+
+let str='('+json+')';
+console.log(str);
+
+//打印出来为[object][object],是因为在某个地方将其打印为了字符串
+```
+
+小问题：关于a=1&a=2&a=3与a=1,2,3,在数据传输时候的区别？
+
+​			没有本质的区别，主要是在数据传输时候量大的时候后者比较杂乱，不是很清晰直观
+
+### 网络模型
+
+#### 1.OSI七层参考模型
+
+1. 应用层：具体应用（HTTP）
+2. 表现层：屏蔽各个计算机的底层的不同
+3. 会话层：两台计算机互相保留信息
+4. 传输层：包的传输（TCP协议）
+5. 网路层：外网连接（IP）
+6. 数据链路层：内网之内
+7. 物理层：具体的物理细节
+
+#### 2.实际五层模型
+
+​	应用层（HTTP）> 传输层（TCP，UDP，net）> 网络层 > 数据链路层  >物理层
+
+​	问题：TCP与UDP区别？
+
+​	答：TCP 应用较广，如果数据发送失败会重发，对于对文件完整性要求较高的情况适合；但时间会相对较慢
+
+​			UDP对数据有容错性，适合应用于视频传输等掉帧一点影响不大的场景，时间较快，流畅
+
+### 数据通信文件上传post
+
+#### 	1.GET
+
+一般不会上传文件，关于普通数据上传已在请求方式get中有介绍
+
+####	2.POST
+
+​	普通数据——querystring
+
+​	文件数据——将文件转成二进制数据buffer直接进行操作
+
+​		post文件
+
+```html
+<form action="http://localhost:8080/upload" method="post" enctype="multipart/form-data">
+      用户：<input type="text" name="username"><br>
+      密码：<input type="password" name="password"><br>
+      <input type="file" name="f1">
+      <input type="submit" value="提交">
+ </form>
+```
+
+如果需要解析文件内的数据需要在form中加入`  enctype="multipart/form-data" `,如以上代码所示
+
+post文件内容
+
+```shell
+<分隔符>\r\n
+字段信息\r\n
+\r\n
+内容\r\n
+<分隔符>\r\n
+字段头\r\n
+\r\n
+内容\r\n
+<分隔符>\r\n
+字段头\r\n
+\r\n
+内容\r\n
+<分隔符>--
+```
+
+<分隔符>\r\n字段信息\r\n\r\n内容\r\n<分隔符>\r\n字段头\r\n\r\n内容\r\n<分隔符>\r\n字段头\r\n\r\n内容\r\n<分隔符>--
+
+-------------------------------------
+
+信息处理流程：
+
+1.用<分隔符>切分
+[
+  null,
+  "\r\n字段信息\r\n\r\n内容\r\n",
+  "\r\n字段信息\r\n\r\n内容\r\n",
+  "\r\n字段信息\r\n\r\n内容\r\n",
+  '--'
+]
+
+2.第0个和最后1个，扔掉
+[
+  "\r\n字段信息\r\n\r\n内容\r\n",
+  "\r\n字段信息\r\n\r\n内容\r\n",
+  "\r\n字段信息\r\n\r\n内容\r\n",
+]
+
+3.每一项
+"\r\n字段信息\r\n\r\n内容\r\n"
+
+"字段信息\r\n\r\n内容"
+"字段信息", "内容"
+
+------------------------------------------------------------------------------------------------------------------
+
+这些信息都需要在buffer二进制中处理
+
+buffer中的操作
+
+```javascript
+let buffer1=new Buffer('abc\r\nhdusuvnucs\r\nhudewijice')
+let buffer2=new BUffer('\r\n')
+
+//console.log(buffer.indexOf(buffer2))
+//buffer没有一个直接的切分操作，可以使用slice,直接封装一个split
+//console.log(buffer.slice(0,3).toString())
+
+function bufferSplit(buffer,delimiter){
+    let arr=[]
+    let n=0
+    
+    while((n=buffer.indexOf(delimiter))!=-1){
+        arr.push(buffer.slice(0,n));
+        buffer=buffer.slice(n+delimiter.length)
+    }
+    arr.push(buffer)
+    return arr;
+}
+
+console.log(buffer.bufferSplit(buffer1,buffer2).map(b=>b.toString()))
+```
+
+可以将该封装的bufferSplit放置在node搭建的服务器中，或者嵌于node_modules中都可
+
+英语单词：delimiter分隔符 ；multiparty 多元的，多党派的；
+
+1. server1.js(基础版本)
+
+```javascript
+const http=require('http');
+const util=require('buffer_util');
+const fs=require('fs');
+
+http.createServer((req, res)=>{
+  let boundary='--'+req.headers['content-type'].split('; ')[1].split('=')[1];
+
+  let arr=[];
+  req.on('data', buffer=>{
+    arr.push(buffer);
+  });
+  req.on('end', ()=>{
+    let buffer=Buffer.concat(arr);
+
+    //1.按照分隔符切分
+    let res=util.bufferSplit(buffer, boundary);
+
+    res.pop();
+    res.shift();
+
+    //2.每一个处理一下
+    res.forEach(buffer=>{
+      buffer=buffer.slice(2, buffer.length-2);
+
+      let n=buffer.indexOf('\r\n\r\n');
+
+      let info=buffer.slice(0, n).toString();
+      let data=buffer.slice(n+4);
+
+      if(info.indexOf('\r\n')!=-1){
+        //文件
+        let res2=info.split('\r\n')[0].split('; ');
+        let name=res2[1].split('=')[1];
+        let filename=res2[2].split('=')[1];
+
+        name=name.substring(1, name.length-1);
+        filename=filename.substring(1, filename.length-1);
+
+        fs.writeFile(`upload/${filename}`, data, err=>{
+          if(err){
+            console.log(err);
+          }else{
+            console.log('上传成功');
+          }
+        });
+      }else{
+        //普通信息
+        let name=info.split('; ')[1].split('=')[1];
+        name=name.substring(1, name.length-1);
+
+        //console.log(name);
+      }
+
+      //console.log(data.toString());
+    });
+  });
+}).listen(8080);
+
+```
+
+buffer_util.js
+
+```javascript
+exports.bufferSplit=function (buffer, delimiter){
+  let arr=[];
+  let n=0;
+
+  while((n=buffer.indexOf(delimiter))!=-1){
+    arr.push(buffer.slice(0, n));
+    buffer=buffer.slice(n+delimiter.length);
+  }
+  arr.push(buffer);
+
+  return arr;
+};
+
+```
+
+2.server2.js(使用**multiparty**版本)
+
+```javascript
+const http=require('http')
+const multiparty=require('multiparty')
+
+http.createServer((req,res)=>{
+    let form=new multiparty.Form({
+        uploadDir:'./upload'
+    })
+    
+    form.parse(req)//表单解析
+    
+    //解析出的字段显示
+    form.on('field', (name, value)=>{
+    console.log('字段：', name, value);
+    });
+    
+    //解析出的文件显示   会对文件进行随机重命名
+	form.on('file', (name, file)=>{
+  	  console.log('文件：', name, file);
+    });
+	
+    //解析完成
+ 	form.on('close', ()=>{
+      console.log('表单解析完成');
+    })
+}).listen(8080);
+```
+
+小问题：长连接是什么？
+
+答：相对的 短连接 就是 读完之后请求断开，有的时候虽然不能当场断开 但也属于短连接
+
+​	 	长连接就是在请求结束后，服务器将这个请求挂着，故意不返回，到一定的时间返回一个数据，不管是不是有数据；比较消耗服务器资源，不适用，现在适用websocket
+
+### Ajax
+
+#### 原生方法及跨域解决
+
+ajax.html
+
+```html
+<script>
+    window.onload=function (){
+      let oBtn=document.getElementById('btn1');
+
+      oBtn.onclick=function (){
+        let ajax=new XMLHttpRequest();
+		
+        //问题：Ajax跨域问题怎么解决，此处请求的地址已经跨域
+        ajax.open('GET', 'http://localhost:8080/a', true);
+          //true 表示异步；false已经被浏览器废弃
+        ajax.send();
+			
+          //readyState 连接状态 0初始化（new） 1已连接 2请求发送 3请求头接收 4请求体接收
+          //status状态码 2xx成功  3xx 重定向 304重定向到缓冲区
+        ajax.onreadystatechange=function (){
+          if(ajax.readyState==4){
+            if(ajax.status>=200 && ajax.status<300 || ajax.status==304){
+              alert('成功');
+              let json=JSON.parse(ajax.responseText);
+              console.log(json);
+            }else{
+              alert('失败');
+            }
+          }
+        };
+      };
+    };
+    </script>
+  </head>
+  <body>
+    <input type="button" value="请求" id="btn1">
+  </body>
+```
+
+问题：ajax为什么不能跨域？——浏览器
+
+答：SOP，浏览器阻止；ajax将请求提交给浏览器，浏览器再将信息发送给服务器，服务器将回答信息返回只不过浏览器此时会检测发回的信息是否和发送的信息在同一个域下，如果不是会将次结果扔掉。浏览器出于安全的考虑
+
+问题：Ajax跨域问题怎么解决？——服务器
+
+​			通过 origin ， `res.setHeader('access-control-allow-origin', '*');`
+
+```javascript
+const http=require('http');
+
+let allowOrigin={
+  'http://localhost': true,
+  'http://aaa.com': true,
+  'https://aaa.com': true,
+}
+
+http.createServer((req, res)=>{
+  let {origin}=req.headers;
+	//origin 指请求的域名
+  if(allowOrigin[origin]){
+    res.setHeader('access-control-allow-origin', '*');
+  }
+	//*指的所有的允许访问；
+  res.write('{"a": 12, "b": "Blue"}');
+  res.end();
+}).listen(8080);
+```
+
+#### jQuery
+
+​			ajax跨域问题
+
+​			fetch
+
+​			Ajax2.0 ->FormData
+
+​			WebSocket
+
+二、数据库
+
+三、框架
+
+​			
+
+​	
