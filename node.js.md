@@ -831,7 +831,7 @@ console.log(buffer.bufferSplit(buffer1,buffer2).map(b=>b.toString()))
 
 英语单词：delimiter分隔符 ；multiparty 多元的，多党派的；
 
-1. server1.js(基础版本)
+#####server1.js-基础版本
 
 ```javascript
 const http=require('http');
@@ -912,7 +912,7 @@ exports.bufferSplit=function (buffer, delimiter){
 
 ```
 
-2.server2.js(使用**multiparty**版本)
+#####server2.js-**multiparty**版本
 
 ```javascript
 const http=require('http')
@@ -1018,15 +1018,376 @@ http.createServer((req, res)=>{
 }).listen(8080);
 ```
 
-#### jQuery
+#### jQuery版本
 
-​			ajax跨域问题
+#### fetch 原生xhr
 
-​			fetch
+fetch：原生对象，不需要引入任何框架，以及增加代码体积，希望替代原来的ajax，
 
-​			Ajax2.0 ->FormData
+​			异步操作，兼容Promise,async,await；使用较方便
 
-​			WebSocket
+​			缺点是会将所有数据解析了再进行操作，适用于图片等
+
+两步法，先**读取**后**解析**
+
+1.fetch解析文本数据
+
+```html
+<script>
+	window.onload=function(){
+        let oBtn=docment.getElementById('btn1')
+        oBtn.onclick=async function(){
+            //1.发起请求
+            let res=await fetch('data/1.txt')
+            //此处res为fetch解析完后的对象
+            //2.文本解析
+            let str=await res.text()
+            console.log(str)//为解析出来的文本
+        }
+    }
+</script>
+```
+
+![](D:\weblearning\mycode\mobileWebCode\webReview-zoe\picture\fetch.PNG)
+
+复习：关于await与sync？
+
+答：
+
+2.fetch解析json数据
+
+```javascript
+window.onload=function (){
+      let oBtn=document.getElementById('btn1');
+      oBtn.onclick=async function (){
+        //1.请求
+        let res=await fetch('data/1.json');
+        //2.解析
+        let json=await res.json();
+
+        console.log(json);
+      };
+    };
+```
+
+3.fetch解析二进制文件—Blob
+
+```html
+<script>
+    window.onload=function (){
+      let oImg=document.getElementById('img1');
+      let oBtn=document.getElementById('btn1');
+      oBtn.onclick=async function (){
+        //1.请求
+        let res=await fetch('data/1.png');
+        //2.解析
+        let data=await res.blob();
+        let url=URL.createObjectURL(data);
+        //URL.createObjectURL(data):将一个data解析为二进制的URL
+        //此处的URL是将解析的文件数据写入Chrome中的一个临时文件，小了临时放内存，大了放硬盘
+        
+        oImg.src=url;
+      };
+    };
+    </script>
+  <body>
+    <input type="button" value="读取" id="btn1">
+    <img id="img1" />
+  </body>
+```
+
+#### Ajax2.0—FormData
+
+- 主要区别：添加了FormData，直接提交，文件和数据
+
+- FormData对象是一个表单数据，可以通过两种方法获得：
+
+​		1.直接将页面中的表单转化成FormData
+
+​		2创建一个空的FormData，往里面塞入数据
+
+配置的服务器
+
+```javascript
+const http=require('http');
+const multiparty=require('multiparty');
+
+http.createServer((req, res)=>{
+  let form=new multiparty.Form({uploadDir: './upload/'});
+	//使用multiparty解析，可以将文件数据也解析
+  form.parse(req);
+
+  form.on('field', (name, value)=>{
+    console.log('field:', name, value);
+  });
+  form.on('file', (name, file)=>{
+    console.log('file:', name, file);
+  });
+
+  form.on('close', ()=>{
+    console.log('完事');
+  });
+}).listen(8080);
+
+```
+
+
+
+1.FormData基本使用
+
+```html
+<body>
+    <form id="form1" action="http://localhost:8080/" method="post">
+      用户：<input type="text" name="user" /><br>
+      密码：<input type="password" name="pass" /><br>
+      文件：<input type="file" name="f1" /><br>
+      <input type="submit" value="提交">
+    </form>
+     复习：form中的action指表单提交的地址 
+  </body>
+  <script>
+  let oForm=document.querySelector('#form1');
+    
+  oForm.onsubmit=function (){
+    let formdata=new FormData(oForm);
+
+    let xhr=new XMLHttpRequest();
+
+    xhr.open(oForm.method, oForm.action, true);
+    xhr.send(formdata);
+
+    xhr.onreadystatechange=function (){
+      if(xhr.readyState==4){
+        if(xhr.status==200){
+          alert('成功');
+        }else{
+          alert('失败');
+        }
+      }
+    };
+
+    return false;
+    //需要ajax表单提交，所以需要阻止表单自身的提交，故需要return false
+  };
+  </script>
+```
+
+2.FormData-jQuery版
+
+```html
+<body>
+    <form id="form1" action="http://localhost:8080/" method="post">
+      用户：<input type="text" name="user" /><br>
+      密码：<input type="password" name="pass" /><br>
+      文件：<input type="file" name="f1" /><br>
+      <input type="submit" value="提交">
+    </form>
+  </body>
+  <script src="jquery.js" charset="utf-8"></script>
+  <script>
+  $('#form1').on('submit', function (){
+    let formdata=new FormData(this);
+
+    $.ajax({
+      url: this.action,
+      type: this.method,
+      data: formdata,//只设置data服务器运行会出错，
+      //原因:jquery转化成自己认为适合上传的类型，formdata是直接提交,应该告诉jQuery不要处理数据
+      processData: false,
+      contentType: false
+    }).then(res=>{
+      alert('成功');
+    }, res=>{
+      alert('失败');
+    });
+
+    return false;
+  });//注意阻止表单自己提交
+  </script>
+```
+
+要点：
+
+​	1. FormData的jQuery的ajax与普通的区别在于，需要设置`data:formdata`
+
+2. 只设置`data:formdata`服务器运行会出错，
+   - 原因：jquery会将FormData转化成自己认为适合上传的类型，formdata是直接提交,
+   - 解决：应该告诉jQuery不要处理数据，在data：FormData后添加
+     - processData: false
+     - contentType: false
+
+3.不用表单提交的FormData
+
+```html
+<body>
+    <div id="div1">
+      用户：<input type="text" id="user" /><br>
+      密码：<input type="password" id="pass" /><br>
+      文件：<input type="file" id="f1" /><br>
+      <input id="btn1" type="button" value="提交">
+    </div>
+  </body>
+  <script>
+  let oBtn=document.querySelector('#btn1');
+  //此处已经无表单提交事件，无需return false
+  oBtn.onclick=function (){
+    let formdata=new FormData();
+    //对FormData进行追加数据
+    formdata.append('username', document.querySelector('#user').value);
+    formdata.append('password', document.querySelector('#pass').value);
+    formdata.append('f1', document.querySelector('#f1').files[0]);
+    //文件中的.value指的是文件名，应该使用.files添加文件内的信息，添加一般多个文件进行循环添加即可
+
+    //
+    let xhr=new XMLHttpRequest();
+
+    xhr.open('post', 'http://localhost:8080/', true);
+    xhr.send(formdata);
+
+    xhr.onreadystatechange=function (){
+      if(xhr.readyState==4){
+        if(xhr.status==200){
+          alert('成功');
+        }else{
+          alert('失败');
+        }
+      }
+    };
+  };
+  </script>
+```
+
+总结：FormData帮助构建一个表单，里面数据内容很丰富，直接可以将文件包在里面，最好使用将表单转化成formdata的方法；
+
+### jsonp
+
+jsonp:可以跨域，但安全性太弱，越用越少
+
+####jsonp原理及使用
+
+jsonp本质上是一个 `<script src="其他网站的js"></script>`
+
+通过其他网站的js将数据进行传递
+
+理解：一个函数定义加一个函数调用
+
+jsonp基本使用
+
+```html
+<script>
+    function complete(data){
+      alert(data.a+data.b);
+    }
+</script>
+<script src="js/1.js" charset="utf-8"></script>
+一个函数定义+一个函数调用
+===============js/1.js================
+<script>
+show({  a: 66, b: 98});
+</script>
+```
+
+jsonp网站中的应用
+
+```html
+<script>
+    function show({s}){
+      alert(s);
+    }
+    </script>
+    <script src="https://sp0.baidu.com/5a1Fazu8AA54nxGko9WTAnF6hhy/su?wd=qq&cb=show" charset="utf-8"></script>
+
+```
+
+jsonp中的输入参数灵活化
+
+```html
+<script>
+    //调用的函数
+    function show({s}){
+      console.log(s);
+    }
+	
+    //过程 ：1.读取输入的值  2.将值作为参数进行获取目的URL 
+    //		3.添加script标签并将其URL赋给 4.DOM操作给head添加兄弟标签script
+    window.onload=function (){
+      let oTxt=document.getElementById('txt1');
+      oTxt.oninput=function (){
+        let url=`https://sp0.baidu.com/5a1Fazu8AA54nxGko9WTAnF6hhy/su?wd=${this.value}&cb=show`;
+        let oS=document.createElement('script');
+        oS.src=url;
+
+        document.head.appendChild(oS);
+      };
+    };
+    </script>
+```
+
+####jQuery版jsonp
+
+```html
+<script src="jquery.js" charset="utf-8"></script>
+    <script>
+    $(function (){
+      $('#txt1').on('input', function (){
+        $.ajax({
+          url: 'https://sp0.baidu.com/5a1Fazu8AA54nxGko9WTAnF6hhy/su',
+          data: {wd: $(this).val()},
+          dataType: 'jsonp',
+          jsonp: 'cb'
+        }).then(({s})=>{
+          console.log(s);
+        }, res=>{
+          alert('失败');
+        });
+      });
+    });
+    </script>
+  </head>
+  <body>
+    <input type="text" id="txt1">
+  </body>
+```
+
+$.ajax可以做两种方式使用：
+
+​		普通的ajax方法 dataType:
+
+​		jsonp使用 dataType:'jsonp',jsonp:'cb'
+
+注意：jQuery中尽量不要出现箭头函数
+
+### Websocket
+
+####websocket特点 
+
+#####1.性能高
+
+​		比普通的ajax性能高大概2~10倍左右；普通http通信是基于字符的通信（超文本协议），websocket开始也是文本，当连接完全建立，协议升级完成了，他会是一个二进制协议，这个时候无需对数据做转换等，所以性能比较高。
+
+	##### 2.双向通信：
+
+​	普通ajax需要发送请求，而websocket则不需要请求，时刻保持连接等有数据了，服务器会主动找请求；
+
+注意：websocket不是独立的一个协议，在建立连接的时候还是依赖http协议来交换秘钥等一些必要的操作，之后才能正式建立连接
+
+####原生
+
+####库-socket.io
+
+#####socket.io特点
+
+​			1.简单方便
+
+​			2.兼容 IE5：能兼容低级浏览器；纯websocket只能兼容HTML5
+
+​			3.自动数据解析
+
+注意：websocket不是独立的一个协议，在建立连接的时候还是依赖http协议来交换秘钥等一些必要的操作，之后才能正式建立连接，故在建server仍旧需要引入http模块
+
+
+
+​			WebSocket：数据交互方式
 
 二、数据库
 
